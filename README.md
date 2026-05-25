@@ -1,17 +1,21 @@
 # 🗺️ My Duo Gourmet Map
 
-Um mapa interativo completo, rápido e responsivo contendo os restaurantes de Belo Horizonte credenciados no Duo Gourmet, com filtros por tipo de cozinha, busca rápida e visualização dos horários de almoço e jantar.
+Um mapa interativo completo, rápido e responsivo contendo os restaurantes da Grande BH credenciados no Duo Gourmet, com filtros avançados de busca, tipo de cozinha, cidades, bairros dinâmicos e horários de funcionamento específicos.
 
 ## 🚀 Funcionalidades
 
-- **Filtros Dinâmicos**: Filtre os restaurantes por tipo de cozinha (Pizzaria, Italiana, Hamburgueria, Japonesa, etc.).
+- **Filtros Dinâmicos por Culinária**: Filtre os restaurantes por tipo de cozinha (Pizzaria, Hamburgueria, Japonesa, Brasileira, etc.).
+- **Filtros por Localidade**:
+  - Seleção inteligente de cidades (Belo Horizonte, Nova Lima, Contagem, Betim, etc.).
+  - Dropdown dinâmico de bairros que se atualiza automaticamente de acordo com a cidade escolhida.
+- **Busca por Horário Específico**: Defina um horário inicial e final (ex: de 19:30 até 22:00) para filtrar apenas restaurantes que estejam abertos durante esse intervalo de tempo, tratando inclusive madrugadas.
+- **Legenda de Categorias**: Legenda flutuante no mapa mapeando cada cor de marcador a uma categoria de cozinha.
+- **Marcadores Premium**: Pins com gradientes de cores modernas e sombreamento 3D dinâmico ao passar o mouse.
 - **Barra de Busca**: Pesquise instantaneamente por nome, bairro ou endereço.
-- **Informações Detalhadas**: Ao clicar em um marcador, veja:
-  - Avaliação/Nota do restaurante.
-  - Endereço completo.
-  - Telefone e Instagram.
-  - Links diretos para o site do Duo Gourmet.
-  - Tabela completa de horários de funcionamento para almoço e jantar (Duo).
+- **Design Totalmente Responsivo**: 
+  - **Desktop**: Layout elegante de tela dividida.
+  - **Celular (Mobile)**: Painel lateral inteligente que funciona como gaveta deslizante/overlay, garantindo que o mapa e a lista fiquem 100% funcionais e otimizados em qualquer tamanho de tela.
+- **Informações Detalhadas**: Ao clicar em um marcador ou item da lista, veja a avaliação/nota, endereço completo, telefone, Instagram, links para rotas no Google Maps e a tabela de horários de funcionamento para almoço e jantar.
 
 ## 🌐 Como Acessar
 
@@ -24,8 +28,9 @@ O site está hospedado diretamente no GitHub Pages. Acesse pelo link:
 ## 🛠️ Tecnologias Utilizadas
 
 - **Leaflet.js**: Para renderização do mapa interativo.
-- **Tailwind CSS / Vanilla CSS**: Para a estilização responsiva e moderna.
-- **HTML5 & Vanilla JavaScript**: Para o controle de busca e filtros rápidos.
+- **FontAwesome & Outfit Google Font**: Para ícones modernos e tipografia limpa.
+- **Vanilla CSS & JS**: Para controles de busca, filtros rápidos e desfoque de fundo (Glassmorphism).
+- **Firebase Analytics**: Para análise de uso e cliques em links sociais ou direções.
 
 ---
 

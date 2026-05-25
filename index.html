@@ -33,12 +33,22 @@
             measurementId: "G-RG56KP16NG"
         };
 
+        // Verificar consentimento de cookies antes de inicializar analytics
+        const cookiesAccepted = localStorage.getItem('cookies-accepted') === 'true';
+        if (!cookiesAccepted) {
+            window['ga-disable-G-RG56KP16NG'] = true;
+        }
+
         // Inicializar Firebase
         const app = initializeApp(firebaseConfig);
         const analytics = getAnalytics(app);
 
         // Função global de log de eventos
         window.logFirebaseEvent = function(eventName, params = {}) {
+            // Ignorar se não houver consentimento
+            if (localStorage.getItem('cookies-accepted') !== 'true') {
+                return;
+            }
             try {
                 logEvent(analytics, eventName, params);
             } catch (error) {
@@ -797,10 +807,12 @@
             font-size: 18px;
             color: var(--accent);
         }
+        .cookie-banner-actions {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
         .cookie-banner-btn {
-            background: var(--accent);
-            color: #0f172a;
-            border: none;
             padding: 8px 16px;
             border-radius: 8px;
             font-weight: 600;
@@ -809,9 +821,25 @@
             transition: all 0.2s ease;
             white-space: nowrap;
         }
-        .cookie-banner-btn:hover {
+        .cookie-banner-btn.btn-accept {
+            background: var(--accent);
+            color: #0f172a;
+            border: 1px solid var(--accent);
+        }
+        .cookie-banner-btn.btn-accept:hover {
             background: #fff;
+            border-color: #fff;
             box-shadow: 0 0 15px rgba(251, 205, 75, 0.4);
+        }
+        .cookie-banner-btn.btn-reject {
+            background: transparent;
+            color: var(--text-muted);
+            border: 1px solid var(--border-color);
+        }
+        .cookie-banner-btn.btn-reject:hover {
+            border-color: #ef4444;
+            color: #ef4444;
+            background: rgba(239, 68, 68, 0.05);
         }
         
         @media (max-width: 480px) {
@@ -821,6 +849,11 @@
                 gap: 12px;
                 bottom: 15px;
                 padding: 14px;
+            }
+            .cookie-banner-actions {
+                flex-direction: column-reverse;
+                align-items: stretch;
+                gap: 8px;
             }
             .cookie-banner-btn {
                 text-align: center;
@@ -1550,29 +1583,40 @@
     <div id="cookie-banner" class="cookie-banner">
         <div class="cookie-banner-content">
             <i class="fa-solid fa-cookie-bite"></i>
-            <span>Nós usamos cookies e análise de dados (Google Analytics) de forma anônima para melhorar sua navegação. Ao continuar, você concorda com o uso.</span>
+            <span>Nós usamos cookies e análise de dados (Google Analytics) de forma anônima para melhorar sua navegação.</span>
         </div>
-        <button id="accept-cookies-btn" class="cookie-banner-btn">Aceitar</button>
+        <div class="cookie-banner-actions">
+            <button id="reject-cookies-btn" class="cookie-banner-btn btn-reject">Recusar</button>
+            <button id="accept-cookies-btn" class="cookie-banner-btn btn-accept">Aceitar</button>
+        </div>
     </div>
 
     <script>
         document.addEventListener('DOMContentLoaded', () => {
             const banner = document.getElementById('cookie-banner');
-            const btn = document.getElementById('accept-cookies-btn');
+            const acceptBtn = document.getElementById('accept-cookies-btn');
+            const rejectBtn = document.getElementById('reject-cookies-btn');
             
-            if (!localStorage.getItem('cookies-accepted')) {
+            if (localStorage.getItem('cookies-accepted') === null) {
                 setTimeout(() => {
                     banner.classList.add('show');
                 }, 1500);
             }
             
-            btn.addEventListener('click', () => {
+            acceptBtn.addEventListener('click', () => {
                 localStorage.setItem('cookies-accepted', 'true');
+                window['ga-disable-G-RG56KP16NG'] = false;
                 banner.classList.remove('show');
                 
                 if (typeof window.logFirebaseEvent === 'function') {
                     window.logFirebaseEvent('cookie_consent_accepted');
                 }
+            });
+            
+            rejectBtn.addEventListener('click', () => {
+                localStorage.setItem('cookies-accepted', 'false');
+                window['ga-disable-G-RG56KP16NG'] = true;
+                banner.classList.remove('show');
             });
         });
     </script>

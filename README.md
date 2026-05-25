@@ -17,7 +17,7 @@ Um mapa interativo completo, rápido e responsivo contendo os restaurantes de Be
 
 O site está hospedado diretamente no GitHub Pages. Acesse pelo link:
 
-👉 **[Inserir link do seu GitHub Pages aqui]**
+👉 **[rogerioc.github.io/my-duogourmet-map](https://rogerioc.github.io/my-duogourmet-map/)**
 
 ---
 

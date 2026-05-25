@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>My Duo Gourmet Map</title>
+    <link rel="icon" type="image/png" href="favicon.png">
     
     <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600;700&display=swap" rel="stylesheet">
@@ -339,22 +340,36 @@
             z-index: 1;
         }
 
-        /* Restaurant map markers */
-        .restaurant-marker-pin {
+        .logo-img {
             width: 32px;
             height: 32px;
+            border-radius: 8px;
+            object-fit: cover;
+        }
+
+        /* Restaurant map markers */
+        .restaurant-marker-pin-premium {
+            width: 32px;
+            height: 32px;
+            background: linear-gradient(135deg, var(--marker-color), #000000 150%);
             border-radius: 50% 50% 50% 0;
             transform: rotate(-45deg);
+            box-shadow: -2px 2px 8px rgba(0, 0, 0, 0.5);
+            border: 2px solid #ffffff;
             display: flex;
             align-items: center;
             justify-content: center;
-            border: 2px solid #fff;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.45);
+            transition: all 0.2s ease-in-out;
         }
-        .restaurant-marker-pin i {
+        .restaurant-marker-pin-premium i {
             transform: rotate(45deg);
-            font-size: 14px;
-            color: #fff;
+            font-size: 13px;
+            color: #ffffff;
+        }
+        .restaurant-marker-pin-premium:hover {
+            transform: rotate(-45deg) scale(1.15);
+            box-shadow: -4px 4px 12px rgba(0, 0, 0, 0.6);
+            border-color: var(--accent);
         }
 
         /* Custom Leaflet styling */
@@ -655,6 +670,45 @@
                 opacity: 0;
             }
         }
+
+        /* Map Legend */
+        .info.legend {
+            background: var(--panel-bg);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            padding: 12px 16px;
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 4px 15px rgba(0,0,0,0.3);
+            color: var(--text-main);
+            font-size: 13px;
+            line-height: 18px;
+            z-index: 1000;
+        }
+        .info.legend h4 {
+            margin: 0 0 10px 0;
+            font-size: 15px;
+            font-weight: 600;
+            color: #fff;
+            text-align: center;
+        }
+        .legend-item {
+            display: flex;
+            align-items: center;
+            margin-bottom: 6px;
+        }
+        .legend-item:last-child {
+            margin-bottom: 0;
+        }
+        .legend-item i {
+            width: 16px;
+            height: 16px;
+            display: inline-block;
+            border-radius: 50%;
+            margin-right: 8px;
+            border: 1px solid rgba(255,255,255,0.4);
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
     </style>
 </head>
 <body>
@@ -669,7 +723,7 @@
             
             <div class="sidebar-header">
                 <div class="logo">
-                    <i class="fa-solid fa-utensils"></i>
+                    <img src="favicon.png" alt="Logo" class="logo-img">
                     <h1>My Duo <span>Gourmet</span> Map</h1>
                 </div>
                 <p class="subtitle-desc">Encontre mais facilmente seu Duo Gourmet favorito</p>
@@ -701,11 +755,16 @@
                         <option value="Sábado">Sábado</option>
                         <option value="Domingo">Domingo</option>
                     </select>
-                    <select id="periodFilter" class="filter-select" onchange="filterRestaurants()" style="grid-column: span 2;">
-                        <option value="">Qualquer horário (Almoço ou Jantar)</option>
+                    <select id="periodFilter" class="filter-select" onchange="filterRestaurants()">
+                        <option value="">Almoço/Jantar</option>
                         <option value="almoco">Somente Almoço</option>
                         <option value="jantar">Somente Jantar</option>
                     </select>
+                    <div class="time-filter-group" style="display: flex; gap: 8px; align-items: center; grid-column: span 2;">
+                        <input type="time" id="timeStart" class="filter-select" onchange="filterRestaurants()" title="Horário Inicial" style="flex: 1; padding: 10px;">
+                        <span style="color: var(--text-main); font-size: 12px; font-weight: 600;">até</span>
+                        <input type="time" id="timeEnd" class="filter-select" onchange="filterRestaurants()" title="Horário Final" style="flex: 1; padding: 10px;">
+                    </div>
                 </div>
             </div>
             
@@ -743,7 +802,7 @@
         let map;
         let markerCluster;
         let markers = [];
-        let activeFilters = { search: "", cuisine: "", neighborhood: "", city: "", day: "", period: "" };
+        let activeFilters = { search: "", cuisine: "", neighborhood: "", city: "", day: "", period: "", timeStart: "", timeEnd: "" };
         
         // Dias da semana em português para verificar se está aberto hoje
         const portugueseDays = ['Domingo', 'Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado'];
@@ -823,6 +882,32 @@
             // Silenciosamente tenta obter a localização no carregamento sem pular a câmera
             locateUser(null, true);
 
+            // Adicionar legenda de categorias de restaurantes ao mapa
+            const legend = L.control({ position: 'bottomright' });
+            legend.onAdd = function(map) {
+                const div = L.DomUtil.create('div', 'info legend');
+                div.innerHTML = '<h4>Categorias</h4>';
+                
+                const legendItems = [
+                    { name: 'Pizzaria / Italiana', color: '#e74c3c' },
+                    { name: 'Hamburgueria', color: '#e67e22' },
+                    { name: 'Japonesa / Asiática', color: '#9b59b6' },
+                    { name: 'Brasileira', color: '#2ecc71' },
+                    { name: 'Bar / Gastrobar', color: '#f1c40f' },
+                    { name: 'Contemporânea / Variada', color: '#3498db' },
+                    { name: 'Carnes / Churrascaria', color: '#a0522d' },
+                    { name: 'Bistrô', color: '#1abc9c' },
+                    { name: 'Outros', color: '#7f8c8d' }
+                ];
+                
+                legendItems.forEach(item => {
+                    div.innerHTML += '<div class="legend-item"><i style="background:' + item.color + '"></i><span>' + item.name + '</span></div>';
+                });
+                
+                return div;
+            };
+            legend.addTo(map);
+
             // Preencher filtros e lista
             populateFilters();
             renderListAndMarkers();
@@ -886,7 +971,7 @@
 
         function getMarkerColor(colorHex) {
             return L.divIcon({
-                html: `<div class="restaurant-marker-pin" style="background-color: ${colorHex}">
+                html: `<div class="restaurant-marker-pin-premium" style="--marker-color: ${colorHex}">
                          <i class="fa-solid fa-utensils"></i>
                        </div>`,
                 className: 'custom-marker-icon',
@@ -1046,7 +1131,60 @@
                     if (!opensInPeriodAnyDay) matchesDayTime = false;
                 }
 
-                return matchesSearch && matchesCity && matchesCuisine && matchesNeighborhood && matchesDayTime;
+                // Filtrar por janela de horário específica
+                let matchesSpecificTime = true;
+                if (activeFilters.timeStart || activeFilters.timeEnd) {
+                    matchesSpecificTime = false; // assume fechado até provar que está aberto
+                    
+                    const toMinutes = (timeStr) => {
+                        if (!timeStr) return null;
+                        const [h, m] = timeStr.split(':').map(Number);
+                        return h * 60 + m;
+                    };
+                    
+                    const reqStart = activeFilters.timeStart ? toMinutes(activeFilters.timeStart) : 0;
+                    let reqEnd = activeFilters.timeEnd ? toMinutes(activeFilters.timeEnd) : 1440; // 24h
+                    
+                    // Tratamento caso usuário insira início maior que fim (ex: 22:00 às 02:00)
+                    if (reqStart > reqEnd && activeFilters.timeEnd) {
+                        reqEnd += 1440;
+                    }
+                    
+                    const daysToCheck = dayVal ? [dayVal === 'Hoje' ? todayDayName : dayVal] : ['Segunda-feira', 'Terça-feira', 'Quarta-feira', 'Quinta-feira', 'Sexta-feira', 'Sábado', 'Domingo'];
+                    
+                    for (const d of daysToCheck) {
+                        const daySched = r.schedule[d] || r.schedule[d + ' (Hoje)'];
+                        if (daySched) {
+                            const checkPeriod = (periodStr) => {
+                                if (!periodStr) return false;
+                                const parts = periodStr.split('-');
+                                if (parts.length === 2) {
+                                    const openTime = toMinutes(parts[0].trim());
+                                    const closeTime = toMinutes(parts[1].trim());
+                                    
+                                    let adjustedClose = closeTime;
+                                    if (closeTime !== null && openTime !== null && closeTime < openTime) {
+                                        adjustedClose += 1440; // madrugadas
+                                    }
+                                    
+                                    if (openTime !== null && adjustedClose !== null) {
+                                        if (openTime <= reqEnd && adjustedClose >= reqStart) {
+                                            return true;
+                                        }
+                                    }
+                                }
+                                return false;
+                            };
+                            
+                            if (checkPeriod(daySched.almoco) || checkPeriod(daySched.jantar)) {
+                                matchesSpecificTime = true;
+                                break;
+                            }
+                        }
+                    }
+                }
+
+                return matchesSearch && matchesCity && matchesCuisine && matchesNeighborhood && matchesDayTime && matchesSpecificTime;
             });
 
             // Atualizar contagem
@@ -1133,6 +1271,8 @@
             activeFilters.city = document.getElementById('cityFilter').value;
             activeFilters.day = document.getElementById('dayFilter').value;
             activeFilters.period = document.getElementById('periodFilter').value;
+            activeFilters.timeStart = document.getElementById('timeStart').value;
+            activeFilters.timeEnd = document.getElementById('timeEnd').value;
             renderListAndMarkers();
 
             // Debounce para evitar inundar o Firebase Analytics com eventos de digitação
@@ -1157,6 +1297,8 @@
             document.getElementById('cityFilter').value = "";
             document.getElementById('dayFilter').value = "";
             document.getElementById('periodFilter').value = "";
+            document.getElementById('timeStart').value = "";
+            document.getElementById('timeEnd').value = "";
             
             // Resetar bairros
             updateNeighborhoodDropdown();

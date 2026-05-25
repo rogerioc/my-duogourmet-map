@@ -32,4 +32,5 @@ O site está hospedado diretamente no GitHub Pages. Acesse pelo link:
 ## ✒️ Autor / Created By
 
 - Desenvolvido por [Rogerio C.S](https://rogerioc.github.io/about/).
+- Desenvolvido com auxílio de Inteligência Artificial usando **Antigravity (Google DeepMind)**.
 - Dados extraídos do site oficial do [Duo Gourmet](https://www.duogourmet.com.br) (Todos os direitos sobre os dados e marca reservados ao Duo Gourmet).

@@ -17,6 +17,44 @@
     <!-- FontAwesome para ícones -->
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
 
+    <!-- Firebase SDK (App & Analytics) -->
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-app.js";
+        import { getAnalytics, logEvent } from "https://www.gstatic.com/firebasejs/12.13.0/firebase-analytics.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyBG5XXOTL9cW6wxk7HodF6tSnAVYXk5Wpw",
+            authDomain: "my-duo-gourmet-map.firebaseapp.com",
+            projectId: "my-duo-gourmet-map",
+            storageBucket: "my-duo-gourmet-map.firebasestorage.app",
+            messagingSenderId: "860009297425",
+            appId: "1:860009297425:web:04141812ae3738c514e3b0",
+            measurementId: "G-RG56KP16NG"
+        };
+
+        // Inicializar Firebase
+        const app = initializeApp(firebaseConfig);
+        const analytics = getAnalytics(app);
+
+        // Função global de log de eventos
+        window.logFirebaseEvent = function(eventName, params = {}) {
+            try {
+                logEvent(analytics, eventName, params);
+            } catch (error) {
+                console.warn("Erro ao logar evento no Firebase:", error);
+            }
+        };
+
+        // Função global para facilitar log de cliques em restaurantes (evita problemas de aspas)
+        window.logRestaurantAction = function(actionType, restaurantName) {
+            if (typeof window.logFirebaseEvent === 'function') {
+                window.logFirebaseEvent(actionType, {
+                    item_name: restaurantName
+                });
+            }
+        };
+    </script>
+
     <style>
         :root {
             --bg-color: #0f172a;
@@ -96,6 +134,25 @@
 
         .logo span {
             color: var(--accent);
+        }
+
+        .subtitle-desc {
+            font-size: 13px;
+            color: var(--text-muted);
+            margin: -4px 0 6px 0;
+            line-height: 1.4;
+            font-weight: 300;
+        }
+
+        .sidebar-obs {
+            font-size: 11px;
+            color: var(--text-muted);
+            opacity: 0.75;
+            margin: 0 0 16px 0;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-weight: 300;
         }
 
         /* Inputs & Filtros */
@@ -553,6 +610,8 @@
                     <i class="fa-solid fa-utensils"></i>
                     <h1>My Duo <span>Gourmet</span> Map</h1>
                 </div>
+                <p class="subtitle-desc">Encontre mais facilmente seu Duo Gourmet favorito</p>
+                <div class="sidebar-obs"><i class="fa-solid fa-circle-info"></i> Obs: Atualmente somente região da Grande BH</div>
                 
                 <div class="search-wrapper">
                     <i class="fa-solid fa-magnifying-glass"></i>
@@ -805,10 +864,10 @@
                 }
                 if (r.instagram) {
                     const handle = r.instagram.replace('@', '');
-                    contactHtml += `<a href="https://instagram.com/${handle}" target="_blank" class="contact-item"><i class="fa-brands fa-instagram"></i> ${r.instagram}</a>`;
+                    contactHtml += `<a href="https://instagram.com/${handle}" target="_blank" class="contact-item" onclick="window.logRestaurantAction('click_instagram', decodeURIComponent('${encodeURIComponent(r.name)}'))"><i class="fa-brands fa-instagram"></i> ${r.instagram}</a>`;
                 }
                 if (r.website) {
-                    contactHtml += `<a href="${r.website}" target="_blank" class="contact-item"><i class="fa-solid fa-globe"></i> Site</a>`;
+                    contactHtml += `<a href="${r.website}" target="_blank" class="contact-item" onclick="window.logRestaurantAction('click_website', decodeURIComponent('${encodeURIComponent(r.name)}'))"><i class="fa-solid fa-globe"></i> Site</a>`;
                 }
                 contactHtml += '</div>';
             }
@@ -853,10 +912,10 @@
                     </table>
 
                     <div class="popup-actions">
-                        <a href="${mapsUrl}" target="_blank" class="popup-btn btn-google">
+                        <a href="${mapsUrl}" target="_blank" class="popup-btn btn-google" onclick="window.logRestaurantAction('click_google_maps', decodeURIComponent('${encodeURIComponent(r.name)}'))">
                             <i class="fa-solid fa-location-dot"></i> Google Maps
                         </a>
-                        <a href="${fullUrl}" target="_blank" class="popup-btn btn-duo">
+                        <a href="${fullUrl}" target="_blank" class="popup-btn btn-duo" onclick="window.logRestaurantAction('click_view_on_duo', decodeURIComponent('${encodeURIComponent(r.name)}'))">
                             <i class="fa-solid fa-link"></i> Ver no Duo
                         </a>
                     </div>
@@ -936,6 +995,19 @@
                 const marker = L.marker([r.lat, r.lon], { icon: getMarkerColor(r.color) });
                 marker.bindPopup(generatePopupHTML(r));
                 
+                // Rastreamento de visualização de detalhes do restaurante no mapa
+                marker.on('popupopen', () => {
+                    if (typeof window.logFirebaseEvent === 'function') {
+                        window.logFirebaseEvent('view_item', {
+                            item_id: r.name,
+                            item_name: r.name,
+                            item_category: r.cuisine,
+                            location_id: r.neighborhood,
+                            city: r.city
+                        });
+                    }
+                });
+                
                 // Salvar referência do restaurante no marcador
                 marker.restaurantData = r;
                 markerCluster.addLayer(marker);
@@ -948,6 +1020,17 @@
                     // Focar no mapa e abrir popup
                     map.setView([r.lat, r.lon], 16);
                     marker.openPopup();
+                    
+                    // Rastreamento de clique no card da lista
+                    if (typeof window.logFirebaseEvent === 'function') {
+                        window.logFirebaseEvent('select_item', {
+                            item_id: r.name,
+                            item_name: r.name,
+                            item_category: r.cuisine,
+                            location_id: r.neighborhood,
+                            source: 'list'
+                        });
+                    }
                     
                     // Em telas pequenas, fechar a sidebar para mostrar o mapa
                     if (window.innerWidth <= 768) {
@@ -979,6 +1062,7 @@
             });
         }
 
+        let filterLogTimeout;
         function filterRestaurants() {
             activeFilters.search = document.getElementById('searchInput').value;
             activeFilters.cuisine = document.getElementById('cuisineFilter').value;
@@ -987,6 +1071,21 @@
             activeFilters.day = document.getElementById('dayFilter').value;
             activeFilters.period = document.getElementById('periodFilter').value;
             renderListAndMarkers();
+
+            // Debounce para evitar inundar o Firebase Analytics com eventos de digitação
+            clearTimeout(filterLogTimeout);
+            filterLogTimeout = setTimeout(() => {
+                if (typeof window.logFirebaseEvent === 'function') {
+                    window.logFirebaseEvent('filter_applied', {
+                        search_query: activeFilters.search,
+                        cuisine: activeFilters.cuisine || 'todas',
+                        neighborhood: activeFilters.neighborhood || 'todos',
+                        city: activeFilters.city || 'todas',
+                        day: activeFilters.day || 'todos',
+                        period: activeFilters.period || 'todos'
+                    });
+                }
+            }, 700);
         }
 
         function clearAllFilters() {
@@ -1000,17 +1099,28 @@
             updateNeighborhoodDropdown();
             document.getElementById('neighborhoodFilter').value = "";
 
+            if (typeof window.logFirebaseEvent === 'function') {
+                window.logFirebaseEvent('clear_filters');
+            }
+
             filterRestaurants();
         }
 
         function toggleSidebar() {
             document.body.classList.toggle('sidebar-collapsed');
             const icon = document.getElementById('toggle-icon');
+            const isCollapsed = document.body.classList.contains('sidebar-collapsed');
+            
             if (document.body.classList.contains('sidebar-collapsed')) {
                 icon.className = "fa-solid fa-chevron-right";
             } else {
                 icon.className = "fa-solid fa-chevron-left";
             }
+            
+            if (typeof window.logFirebaseEvent === 'function') {
+                window.logFirebaseEvent('toggle_sidebar', { collapsed: isCollapsed });
+            }
+            
             setTimeout(() => map.invalidateSize(), 300);
         }
 
@@ -1018,6 +1128,10 @@
 
         function locateUser(e, silent = false) {
             if (e) e.preventDefault();
+            
+            if (typeof window.logFirebaseEvent === 'function') {
+                window.logFirebaseEvent('click_geolocation', { silent: silent });
+            }
             
             if (!navigator.geolocation) {
                 if (!silent) alert("Geolocalização não é suportada pelo seu navegador.");

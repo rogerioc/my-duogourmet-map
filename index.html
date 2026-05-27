@@ -1070,6 +1070,41 @@
             // Preencher filtros e lista
             populateFilters();
             renderListAndMarkers();
+
+            // Verificar se há um restaurante específico passado na URL
+            const urlParams = new URLSearchParams(window.location.search);
+            const targetSlug = urlParams.get('r');
+            if (targetSlug) {
+                const cleanTarget = targetSlug.toLowerCase().trim();
+                const marker = markers.find(m => {
+                    if (m.restaurantData) {
+                        const slug = m.restaurantData.url ? m.restaurantData.url.split('/').filter(Boolean).pop().toLowerCase() : "";
+                        const name = m.restaurantData.name ? m.restaurantData.name.toLowerCase() : "";
+                        return slug === cleanTarget || name === cleanTarget;
+                    }
+                    return false;
+                });
+                if (marker) {
+                    setTimeout(() => {
+                        // Em telas pequenas, fechar a sidebar para mostrar o mapa
+                        if (window.innerWidth <= 768) {
+                            document.body.classList.add('sidebar-collapsed');
+                            const toggleIcon = document.getElementById('toggle-icon');
+                            if (toggleIcon) {
+                                toggleIcon.className = "fa-solid fa-chevron-right";
+                            }
+                        }
+                        if (markerCluster && typeof markerCluster.zoomToShowLayer === 'function') {
+                            markerCluster.zoomToShowLayer(marker, () => {
+                                marker.openPopup();
+                            });
+                        } else {
+                            map.setView(marker.getLatLng(), 16);
+                            marker.openPopup();
+                        }
+                    }, 500);
+                }
+            }
         }
 
         function populateFilters() {

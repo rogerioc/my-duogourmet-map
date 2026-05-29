@@ -1072,10 +1072,9 @@
             populateFilters();
             renderListAndMarkers();
 
-            // Verificar se há um restaurante específico passado na URL
-            const urlParams = new URLSearchParams(window.location.search);
-            const targetSlug = urlParams.get('r');
-            if (targetSlug) {
+            // Função modular para focar e abrir o popup de um restaurante específico
+            window.focusRestaurant = function(targetSlug) {
+                if (!targetSlug) return;
                 const cleanTarget = targetSlug.toLowerCase().trim();
                 const marker = markers.find(m => {
                     if (m.restaurantData) {
@@ -1086,26 +1085,52 @@
                     return false;
                 });
                 if (marker) {
-                    setTimeout(() => {
-                        // Em telas pequenas, fechar a sidebar para mostrar o mapa
-                        if (window.innerWidth <= 768) {
-                            document.body.classList.add('sidebar-collapsed');
-                            const toggleIcon = document.getElementById('toggle-icon');
-                            if (toggleIcon) {
-                                toggleIcon.className = "fa-solid fa-chevron-right";
-                            }
+                    // Em telas pequenas, fechar a sidebar para mostrar o mapa
+                    if (window.innerWidth <= 768) {
+                        document.body.classList.add('sidebar-collapsed');
+                        const toggleIcon = document.getElementById('toggle-icon');
+                        if (toggleIcon) {
+                            toggleIcon.className = "fa-solid fa-chevron-right";
                         }
-                        if (markerCluster && typeof markerCluster.zoomToShowLayer === 'function') {
-                            markerCluster.zoomToShowLayer(marker, () => {
-                                marker.openPopup();
-                            });
-                        } else {
-                            map.setView(marker.getLatLng(), 16);
+                    }
+                    if (markerCluster && typeof markerCluster.zoomToShowLayer === 'function') {
+                        markerCluster.zoomToShowLayer(marker, () => {
                             marker.openPopup();
-                        }
-                    }, 500);
+                        });
+                    } else {
+                        map.setView(marker.getLatLng(), 16);
+                        marker.openPopup();
+                    }
                 }
+            };
+
+            // 1. Verificar se há um restaurante específico passado via Query String (?r=slug)
+            const urlParams = new URLSearchParams(window.location.search);
+            const targetSlug = urlParams.get('r');
+            if (targetSlug) {
+                setTimeout(() => focusRestaurant(targetSlug), 500);
             }
+
+            // 2. Verificar se há um restaurante específico passado via Hash (#slug)
+            const initialHash = window.location.hash.replace('#', '');
+            if (initialHash) {
+                setTimeout(() => focusRestaurant(initialHash), 500);
+            }
+
+            // 3. Ouvir mudanças dinâmicas no Hash da URL (sem reload de página)
+            window.addEventListener('hashchange', function() {
+                const newHash = window.location.hash.replace('#', '');
+                if (newHash) {
+                    focusRestaurant(newHash);
+                }
+            });
+
+            // 4. Ouvir mensagens postadas por uma janela externa (ex: pai do iframe)
+            window.addEventListener('message', function(event) {
+                if (event.data && event.data.type === 'selectRestaurant') {
+                    focusRestaurant(event.data.slug);
+                }
+            });
         }
 
         function populateFilters() {
